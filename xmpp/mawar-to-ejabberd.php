@@ -4,12 +4,12 @@
 $config = [];
 
 // Mawar’s database
-$config['mawar']['dsn'] = 'mysql:dbname=mawar_jabberid_org;host=127.0.0.1';
+$config['mawar']['dsn'] = 'mysql:dbname=mawar_averkov_net;host=127.0.0.1';
 $config['mawar']['user'] = 'mawar';
 $config['mawar']['password'] = '123456';
 
 // Ejabberd’s database
-$config['ejabberd']['dsn'] = 'mysql:dbname=ejabberd_jabberid_org;host=127.0.0.1';
+$config['ejabberd']['dsn'] = 'mysql:dbname=ejabberd_averkov_net;host=127.0.0.1';
 $config['ejabberd']['user'] = 'ejabberd';
 $config['ejabberd']['password'] = '123456';
 
@@ -20,6 +20,7 @@ class Migration
 	private $mawar;
 	private $ejabberd;
 	private $statements;
+	private $config;
 
 	public function __construct($config) {
 		try {
@@ -61,7 +62,9 @@ class Migration
 		$this->logWarning("Starting actual migration process");
 
 		$this->statements['USERS']->execute();
+		$i = 0;
 		while($user_row = $this->statements['USERS']->fetch()) {
+
 			$username = $this->ejabberd->quote($user_row['user_login']);
 			$password = $this->ejabberd->quote($user_row['user_password']);
 
@@ -92,7 +95,8 @@ class Migration
 
 			$this->ejabberd->commit();
 
-			$this->logMessage("Done for user: {$user_row['user_login']}");
+			$this->logMessage("Done for user $i: {$user_row['user_login']}");
+			$i++;
 		}
 		$this->statements['USERS']->closeCursor();
 
