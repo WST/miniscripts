@@ -33,7 +33,7 @@ foreach($players as $player) {
 		continue;
 	} else {
 		$information = json_decode($data);
-		$player_name = encodeName($information->username);
+		$player_name = encodeName($player);
 		echo "{$player_name}.value {$information->points}\n";
 	}
 }
