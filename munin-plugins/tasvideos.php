@@ -12,22 +12,28 @@ if(!isset($argv)) {
 
 $players = ['marzojr', 'WST'];
 
+function encodeName($username) {
+	return str_replace(' ', '_', strtolower($username));
+}
+
 if(@ $argv[1]){
-	echo "graph_title Sonic TAS players\ngraph_vlabel points\ngraph_category tasvideos\n";
+	$label = 'points';
+	if(!(rand() % 10)) $label = 'ponies';
+	echo "graph_title TASvideos expert players\ngraph_vlabel {$label}\ngraph_category TASvideos\n";
 	foreach($players as $player) {
-		echo strtolower($player). ".label {$player}\n";
+		echo encodeName($player). ".label {$player}\n";
 	}
 	die();
 }
 
 foreach($players as $player) {
-	$data = @ file_get_contents("http://tasvideos.org/playerinfo/{$player}.json");
+	$data = @ file_get_contents('http://tasvideos.org/playerinfo/' . urlencode($player) . '.json');
 	if($data === false) {
 		// Handle the error
 		continue;
 	} else {
 		$information = json_decode($data);
-		$player_name = strtolower($information->username);
+		$player_name = encodeName($information->username);
 		echo "{$player_name}.value {$information->points}\n";
 	}
 }
