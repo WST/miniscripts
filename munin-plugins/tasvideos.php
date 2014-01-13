@@ -31,7 +31,7 @@ function encodeName($username) {
 if(@ $argv[1]){
 	$label = 'points';
 	if(!(rand() % 10)) $label = 'ponies';
-	echo "{$graph_caption}\ngraph_vlabel {$label}\ngraph_category tasvideos\n";
+	echo "graph_title {$graph_caption}\ngraph_vlabel {$label}\ngraph_category tasvideos\n";
 	foreach($players as $player) {
 		echo encodeName($player). ".label {$player}\n";
 	}
