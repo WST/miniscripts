@@ -1,6 +1,5 @@
 #!/usr/bin/php
 <?php
-
 /**
 * © 2014 Ilya I. Averkov <WST>
 * http://ilya.averkov.net
@@ -11,10 +10,10 @@ if(!isset($argv)) {
 }
 
 $graph_caption = 'Sonic tool-assisting speedrunners';
-$players = ['marzojr', 'WST'];
+$players = ['marzojr', 'WST', 'feeuzz22', 'Qwerty6000'];
 $retries = 1;
 
-function getPoints($username) {
+function getPoints($username, $retries = 0) {
 	do {
 		$data = @ file_get_contents('http://tasvideos.org/playerinfo/' . urlencode($username) . '.json');
 		if($data) {
@@ -43,6 +42,6 @@ if(@ $argv[1]){
 
 foreach($players as $player) {
 	$player_name = encodeName($player);
-	$player_points = getPoints($player);
+	$player_points = getPoints($player, $retries);
 	echo "{$player_name}.value {$player_points}\n";
 }
