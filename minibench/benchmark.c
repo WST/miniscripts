@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 		if(((int) floor(foo) % 3) == 2) {
 			foo -= (i - round(2.0 + sqrt(i)));
 			char buf[10];
-			sprintf(buf, "%d", i);
+			sprintf(buf, "%lu", i);
 			short buf_length = strlen(buf);
 			memcpy(&bar[pos], buf, buf_length);
 			pos += buf_length;
