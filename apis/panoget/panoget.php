@@ -87,7 +87,7 @@ final class Загрузчик
 			}
 			$iterator = 0;
 			do {
-				if(!$data = @ json_decode(@ file_get_contents("http://www.panoramio.com/map/get_panoramas.php?set=all&from=$iterator&to=" . ($iterator + 99) . "&size=original&minx={$coordinates[0]}&miny={$coordinates[1]}&maxx={$coordinates[2]}&maxy={$coordinates[3]}"))) {
+				if(!$data = @ json_decode(@ file_get_contents("http://www.panoramio.com/map/get_panoramas.php?set=full&from=$iterator&to=" . ($iterator + 99) . "&size=original&minx={$coordinates[0]}&miny={$coordinates[1]}&maxx={$coordinates[2]}&maxy={$coordinates[3]}&size=original&mapfilter=false"))) {
 					$this->сообщение("processing <$place> failed: got bad data");
 					break;
 				}

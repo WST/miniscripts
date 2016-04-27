@@ -11,10 +11,10 @@ echo -n "PCC: "
 ./benchmark
 rm benchmark
 
-#bcc -O3 -ffast-math -flto benchmark.c -lm -o benchmark
-#echo -n "BCC: "
-#./benchmark
-#rm benchmark
+bcc -O3 -ffast-math -flto benchmark.c -lm -o benchmark
+echo -n "BCC: "
+./benchmark
+rm benchmark
 
 clang -O3 -ffast-math -flto benchmark.c -lm -o benchmark
 echo -n "clang: "
@@ -32,3 +32,6 @@ lua benchmark.lua
 
 echo -n "PHP: "
 php benchmark.php
+
+echo -n "PyPy: "
+pypy benchmark.py
