@@ -2,7 +2,7 @@
 # Только Python 3.x
 
 # Импорты из Python
-import asyncio, time
+import asyncio, time, sqlite3
 from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
 
@@ -30,6 +30,11 @@ class Tag:
 
 # XML-поток
 class XmlStream(asyncio.Protocol, ContentHandler):
+	def connection_made(self, transport):
+		self._peername = transport.get_extra_info('peername')
+		print('Connection from {}'.format(self._peername))
+		self.transport = transport
+
 	def data_received(self, data):
 		xml = data.decode()
 		try:
@@ -89,11 +94,6 @@ class XmlStream(asyncio.Protocol, ContentHandler):
 
 # Агентский поток
 class ControllerAgentStream(XmlStream):
-	def connection_made(self, transport):
-		peername = transport.get_extra_info('peername')
-		print('Connection from {}'.format(peername))
-		self.transport = transport
-
 	def handleStreamStart(self, tag):
 		if tag.name() != 'stream':
 			print('Root element should be <stream>')
@@ -106,10 +106,11 @@ class ControllerAgentStream(XmlStream):
 
 # Контроллер
 class Controller:
-	def __init__(self):
+	def __init__(self, config):
 		self.loop = asyncio.get_event_loop()
 		coroutine = self.loop.create_server(ControllerAgentStream, '127.0.0.1', 8888)
 		self.server = self.loop.run_until_complete(coroutine)
+		self._config = config
 
 	def handle_alarm(self):
 		global time
@@ -121,11 +122,21 @@ class Controller:
 		try:
 			self.loop.run_forever()
 		except KeyboardInterrupt:
-			pass
+			print("Exitting on demand")
 
 		self.server.close()
 		self.loop.run_until_complete(self.server.wait_closed())
 		self.loop.close()
 
-controller = Controller()
+try:
+	import config
+except:
+	print("Failed to load config.py")
+	exit(-1)
+
+db = sqlite3.connect(config.DB)
+
+controller = Controller(config)
 controller.run()
+
+db.close()
