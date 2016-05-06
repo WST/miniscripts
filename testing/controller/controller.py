@@ -1,32 +1,78 @@
 #!/usr/bin/env python
+# Только Python 3.x
 
+# Импорты из Python
 import asyncio, time
 from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
+
+# XML-элемент
+class Tag:
+	def __init__(self, name, attributes):
+		self._name = name
+		self._attributes = attributes
+		self._children = []
+
+	def insertChildElement(self, element):
+		self._children.append(element)
+
+	def name(self):
+		return self._name
 
 # XML-поток
 class XmlStream(asyncio.Protocol, ContentHandler):
 	def data_received(self, data):
 		xml = data.decode()
 		try:
-			self.parser.feed(xml)
+			self._parser.feed(xml)
 		except Exception as e:
 			print(repr(e))
-			self.transport.write(b'</stream>')
-			self.transport.close()
+			self.close('XML error, closing stream')
+
+	def close(self, message):
+		print(message)
+		self.transport.write(b'</stream>')
+		self.transport.close()
 
 	def startElement(self, name, attrs):
-		pass
+		tag = Tag(name, attrs)
+		if len(self._stack) == 0:
+			return self.handleStreamStart(tag)
+		else:
+			self._stack.append(tag)
 
 	def endElement(self, name):
-		pass
+		if len(self._stack) == 1:
+			return self.handleStreamEnd()
+		else:
+			try:
+				top = self._stack.pop()
+				if top.name() != name:
+					self.close("Found closing tag for %s, but %s was expected" % (name, top.name()))
+
+				if len(self.stack) == 1:
+					stanza = Stanza(self, top)
+					self.handleStanza(stanza)
+				else:
+					stack[-1].insertChildElement(top)
+			except IndexError as e:
+				self.close("Found a closing tag, but no tag is currently open!")
+			except:
+				self.close()
 
 	def characters(self, data):
-		pass
+		self._stack[-1].insertCharacterData(data);
+
+	def handleStreamStart(self, tag: Tag):
+		raise NotImplementedError
+
+	def handleStreamEnd(self):
+		raise NotImplementedError
 
 	def __init__(self):
-		self.parser = make_parser(['IncrementalParser'])
-		self.parser.setContentHandler(self)
+		self._parser = make_parser(['IncrementalParser'])
+		self._parser.setContentHandler(self)
+		self._stack = []
 
 # Агентский поток
 class ControllerAgentStream(XmlStream):
@@ -44,7 +90,7 @@ class Controller:
 
 	def handle_alarm(self):
 		global time
-		print("ALARM EVENT %.2f" % time.time())
+		#print("ALARM EVENT %.2f" % time.time())
 		self.loop.call_later(0.1, self.handle_alarm)
 
 	def run(self):
