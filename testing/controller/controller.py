@@ -6,15 +6,24 @@ import asyncio, time
 from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
 
+# XML-станза
+class Stanza:
+	def __init__(self, stream, tag):
+		pass
+
 # XML-элемент
 class Tag:
 	def __init__(self, name, attributes):
 		self._name = name
 		self._attributes = attributes
 		self._children = []
+		self._cdata = []
 
 	def insertChildElement(self, element):
 		self._children.append(element)
+
+	def insertCharacterData(self, cdata):
+		self._cdata.append(cdata)
 
 	def name(self):
 		return self._name
@@ -36,10 +45,9 @@ class XmlStream(asyncio.Protocol, ContentHandler):
 
 	def startElement(self, name, attrs):
 		tag = Tag(name, attrs)
-		if len(self._stack) == 0:
+		self._stack.append(tag)
+		if len(self._stack) == 1:
 			return self.handleStreamStart(tag)
-		else:
-			self._stack.append(tag)
 
 	def endElement(self, name):
 		if len(self._stack) == 1:
@@ -50,15 +58,16 @@ class XmlStream(asyncio.Protocol, ContentHandler):
 				if top.name() != name:
 					self.close("Found closing tag for %s, but %s was expected" % (name, top.name()))
 
-				if len(self.stack) == 1:
+				if len(self._stack) == 1:
 					stanza = Stanza(self, top)
 					self.handleStanza(stanza)
 				else:
 					stack[-1].insertChildElement(top)
 			except IndexError as e:
 				self.close("Found a closing tag, but no tag is currently open!")
-			except:
-				self.close()
+			except Exception as e:
+				print(e)
+				self.close("Unknown error")
 
 	def characters(self, data):
 		self._stack[-1].insertCharacterData(data);
@@ -67,6 +76,10 @@ class XmlStream(asyncio.Protocol, ContentHandler):
 		raise NotImplementedError
 
 	def handleStreamEnd(self):
+		#raise NotImplementedError
+		self.transport.close()
+
+	def handleStanza(self, stanza: Stanza):
 		raise NotImplementedError
 
 	def __init__(self):
@@ -80,6 +93,16 @@ class ControllerAgentStream(XmlStream):
 		peername = transport.get_extra_info('peername')
 		print('Connection from {}'.format(peername))
 		self.transport = transport
+
+	def handleStreamStart(self, tag):
+		if tag.name() != 'stream':
+			print('Root element should be <stream>')
+			exit(-1)
+		else:
+			print('New stream')
+
+	def handleStanza(self, stanza):
+		print('Got a stanza!')
 
 # Контроллер
 class Controller:
