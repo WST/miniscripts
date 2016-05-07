@@ -11,6 +11,8 @@ def console_message(message, color = 'default'):
 		print("%s%s%s" % ('\033[91m', message, '\033[0m'))
 	elif color == 'green':
 		print("%s%s%s" % ('\033[92m', message, '\033[0m'))
+	elif color == 'blue':
+		print("%s%s%s" % ('\033[94m', message, '\033[0m'))
 	else:
 		print(message)
 
@@ -21,6 +23,12 @@ class Stanza:
 
 	def tag(self):
 		return self._tag
+
+	def to(self):
+		return self._tag.getAttribute('to')
+
+	def __repr__(self):
+		return 'TODO'
 
 # XML-элемент
 class Tag:
@@ -38,6 +46,9 @@ class Tag:
 
 	def name(self):
 		return self._name
+
+	def attributes(self):
+		return self._attributes
 
 	def getAttribute(self, name, default_value = None):
 		try:
@@ -96,19 +107,11 @@ class XmlStream(asyncio.Protocol, ContentHandler):
 	def characters(self, data):
 		self._stack[-1].insertCharacterData(data);
 
-	def handleStreamStart(self, tag: Tag):
-		if tag.name() != 'stream':
-			self.close('Root element should be <stream> with proper type attribute!')
-		else:
-			self._type = tag.getAttribute('type')
-			if(self._type not in ['module', 'host']):
-				self.close('Only host and module streams are currently supported!')
-			
-			console_message('New %s stream' % self._type, 'green')
+	def handleStreamStart(self):
+		raise NotImplementedError
 
 	def handleStreamEnd(self):
-		#raise NotImplementedError
-		self.transport.close()
+		raise NotImplementedError
 
 	def handleStanza(self, stanza: Stanza):
 		raise NotImplementedError
@@ -120,8 +123,35 @@ class XmlStream(asyncio.Protocol, ContentHandler):
 
 # Агентский поток
 class ControllerAgentStream(XmlStream):
+	def handleStreamStart(self, tag: Tag):
+		if tag.name() != 'stream':
+			self.close('Root element should be <stream> with proper type attribute!')
+		else:
+			self._type = tag.getAttribute('type')
+			console_message('New %s stream' % self._type, 'green')
+
+			if self._type == 'module':
+				self.onModuleConnect(tag.attributes())
+			elif self._type == 'host':
+				self.onHostConnect(tag.attributes())
+			else:
+				self.close('Only host and module streams are currently supported!')
+
+	def handleStreamEnd(self):
+		self.transport.close()
+
 	def handleStanza(self, stanza):
-		console_message('Got a stanza!')
+		console_message('Got a stanza: %s' % repr(stanza))
+		recipient = stanza.to()
+		sender = "%s:%s" % (self._type, self._name)
+
+	def onModuleConnect(self, attributes):
+		self._name = tag.getAttribute('module_name')
+		self._key = tag.getAttribute('module_key')
+
+	def onHostConnect(self, attributes):
+		self._name = tag.getAttribute('host_name')
+		self._key = tag.getAttribute('host_key')
 
 # Контроллер
 class Controller:
@@ -147,13 +177,20 @@ class Controller:
 		self.loop.run_until_complete(self.server.wait_closed())
 		self.loop.close()
 
+console_message('Starting controller', 'blue')
+console_message('Loading configuration file', 'blue')
+
 try:
 	import config
 except:
 	console_message("Failed to load config.py", 'red')
 	exit(-1)
 
+console_message('Opening the database', 'blue')
+
 db = sqlite3.connect(config.DB)
+
+console_message('Initializing daemon', 'blue')
 
 controller = Controller(config)
 controller.run()
