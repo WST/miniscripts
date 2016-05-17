@@ -163,11 +163,14 @@ class Controller:
 
 	def handle_alarm(self):
 		global time
-		#print("ALARM EVENT %.2f" % time.time())
 		self.loop.call_later(0.1, self.handle_alarm)
+
+	def report_status(self):
+		console_message('Controller running', 'green')
 
 	def run(self):
 		self.loop.call_later(0.1, self.handle_alarm)
+		self.loop.call_later(0.1, self.report_status)
 		try:
 			self.loop.run_forever()
 		except KeyboardInterrupt:
